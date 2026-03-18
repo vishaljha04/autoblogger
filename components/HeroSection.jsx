@@ -8,84 +8,77 @@ gsap.registerPlugin(ScrollTrigger);
 
 const HeroSection = () => {
   const sectionRef = useRef(null);
-  const textContainerRef = useRef(null);
   const h1Ref1 = useRef(null);
   const h1Ref2 = useRef(null);
   const videoRef = useRef(null);
 
   useEffect(() => {
+    let mm = gsap.matchMedia();
+
 
     const introTl = gsap.timeline();
-
     introTl
       .fromTo(
         [h1Ref1.current, h1Ref2.current],
-        { y: 50, opacity: 0, x: -20 },
-        { y: 0, opacity: 1, x: 0, duration: 1.2, stagger: 0.2, ease: "power4.out" }
+        { y: 30, opacity: 0 },
+        { y: 0, opacity: 1, duration: 1, stagger: 0.2, ease: "power4.out" }
       )
       .fromTo(
         videoRef.current,
-        { scale: 0.8, opacity: 0 },
-        { scale: 1, opacity: 1, duration: 1.5, ease: "expo.out" },
-        "-=0.8"
+        { scale: 0.9, opacity: 0 },
+        { scale: 1, opacity: 1, duration: 1.2, ease: "expo.out" },
+        "-=0.6"
       );
 
 
-    const scrollTl = gsap.timeline({
-      scrollTrigger: {
-        trigger: sectionRef.current,
-        start: "top top",
-        end: "+=120%",
-        scrub: 1.5,
-        pin: true,
-      },
+    mm.add("(min-width: 1024px)", () => {
+      const scrollTl = gsap.timeline({
+        scrollTrigger: {
+          trigger: sectionRef.current,
+          start: "top top",
+          end: "+=100%",
+          scrub: 1.5,
+          pin: true,
+        },
+      });
+
+      scrollTl
+        .to(h1Ref1.current, { x: -80, ease: "power2.inOut" }, "sync")
+        .to(h1Ref2.current, { x: 80, ease: "power2.inOut" }, "sync")
+        .to(videoRef.current, { scale: 1.15, y: -20, ease: "power2.inOut" }, "sync");
+
+      return () => {
+        if (ScrollTrigger.getById("mainPin")) ScrollTrigger.getById("mainPin").kill();
+      };
     });
 
-    scrollTl
-      .to(textContainerRef.current, {
-        z: -600,
-        opacity: 0,
-        scale: 0.8,
-        ease: "power2.inOut",
-      }, "sync")
-
-
-      .to(videoRef.current, {
-        scale: 1.2,
-        y: -20,
-        ease: "power2.inOut",
-      }, "sync");
-
-    return () => {
-      ScrollTrigger.getAll().forEach((t) => t.kill());
-    };
+    return () => mm.revert();
   }, []);
 
   return (
     <div
       ref={sectionRef}
-      className="relative min-h-screen flex flex-col items-center py-[10vw] overflow-hidden bg-white dark:bg-neutral-950"
-      style={{ perspective: "1200px" }}
+      className="relative min-h-[80vh] md:min-h-screen flex flex-col items-center py-12 md:py-[5vw] overflow-hidden "
     >
-      <div className="container mx-auto px-4 z-10">
+      <div className="w-full max-w-[1440px] px-4 sm:px-6 md:px-10 z-10">
 
-        <div ref={textContainerRef} className="will-change-transform">
+        <div className="flex flex-col space-y-2 md:space-y-0">
           <h1
             ref={h1Ref1}
-            className="text-[8vw] font-medium tracking-tighter leading-[0.85] ml-[5vw] md:ml-[10vw] text-neutral-900 dark:text-neutral-100"
+            className="text-[13vw] sm:text-[11vw] md:text-[8vw] font-bold tracking-tighter leading-[0.9] text-neutral-900 dark:text-neutral-100 text-left md:ml-[5vw]"
           >
             Digitally crafted
           </h1>
 
           <h1
             ref={h1Ref2}
-            className="text-[8vw] font-medium tracking-tighter leading-[0.85] ml-[15vw] md:ml-[33vw] text-neutral-400"
+            className="text-[13vw] sm:text-[11vw] md:text-[8vw] font-bold tracking-tighter leading-[0.9] text-neutral-400 text-right md:text-left md:ml-[25vw]"
           >
             blogs experiences
           </h1>
         </div>
 
-        <div className="relative mt-[10vh] flex justify-center z-20">
+        <div className="relative mt-12 md:mt-[15vh] flex justify-center z-20">
           <video
             ref={videoRef}
             src="/hero.mp4"
@@ -93,7 +86,7 @@ const HeroSection = () => {
             muted
             loop
             playsInline
-            className="w-full md:w-[85%] rounded-[2.5rem] shadow-2xl border border-neutral-200 dark:border-neutral-800 will-change-transform"
+            className="w-full md:w-[85%] aspect-video object-cover rounded-[1.25rem] md:rounded-[2.5rem] shadow-2xl border border-neutral-200 dark:border-neutral-800"
           />
         </div>
       </div>
