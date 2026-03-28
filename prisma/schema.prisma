@@ -1,0 +1,282 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Authentication & Users ───
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  passwordHash  String?
+  image         String?
+  role          Role      @default(MEMBER)
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  accounts Account[]
+  sessions Session[]
+  blogs    Blog[]
+  schedules Schedule[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ─── Multi-Tenant ───
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  plan      Plan     @default(FREE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users     User[]
+  blogs     Blog[]
+  platforms Platform[]
+  schedules Schedule[]
+
+  @@map("organizations")
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum Plan {
+  FREE
+  STARTER
+  PRO
+  ENTERPRISE
+}
+
+// ─── Blog Content ───
+
+model Blog {
+  id          String      @id @default(cuid())
+  title       String
+  slug        String
+  content     String
+  excerpt     String?
+  metaTitle   String?
+  metaDesc    String?
+  keywords    String[]
+  category    String?
+  language    String      @default("en")
+  imageUrl    String?
+  status      BlogStatus  @default(DRAFT)
+  niche       String?
+  wordCount   Int         @default(0)
+  readingTime Int         @default(0)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  publishedAt DateTime?
+  scheduledAt DateTime?
+
+  authorId       String
+  author         User         @relation(fields: [authorId], references: [id])
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  publications Publication[]
+  analytics    BlogAnalytics[]
+  jobLogs      JobLog[]
+
+  @@unique([slug, authorId])
+  @@map("blogs")
+}
+
+enum BlogStatus {
+  DRAFT
+  GENERATING
+  REVIEW
+  SCHEDULED
+  PUBLISHED
+  FAILED
+}
+
+// ─── Publishing ───
+
+model Platform {
+  id             String       @id @default(cuid())
+  name           String
+  type           PlatformType
+  isActive       Boolean      @default(true)
+  credentials    String?
+  config         String?
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  publications Publication[]
+
+  @@map("platforms")
+}
+
+enum PlatformType {
+  WORDPRESS
+  MEDIUM
+  LINKEDIN
+  TWITTER
+  INSTAGRAM
+}
+
+model Publication {
+  id          String            @id @default(cuid())
+  blogId      String
+  blog        Blog              @relation(fields: [blogId], references: [id])
+  platformId  String
+  platform    Platform          @relation(fields: [platformId], references: [id])
+  externalId  String?
+  externalUrl String?
+  status      PublicationStatus @default(PENDING)
+  error       String?
+  publishedAt DateTime?
+  createdAt   DateTime          @default(now())
+
+  @@map("publications")
+}
+
+enum PublicationStatus {
+  PENDING
+  PUBLISHING
+  PUBLISHED
+  FAILED
+}
+
+// ─── Scheduling ───
+
+model Schedule {
+  id             String          @id @default(cuid())
+  name           String
+  niche          String
+  language       String          @default("en")
+  frequency      ScheduleFreq    @default(DAILY)
+  cronExpression String?
+  isActive       Boolean         @default(true)
+  nextRunAt      DateTime?
+  lastRunAt      DateTime?
+  config         String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  userId         String
+  user           User            @relation(fields: [userId], references: [id])
+  organizationId String?
+  organization   Organization?   @relation(fields: [organizationId], references: [id])
+
+  @@map("schedules")
+}
+
+enum ScheduleFreq {
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}
+
+// ─── Analytics ───
+
+model BlogAnalytics {
+  id             String   @id @default(cuid())
+  blogId         String
+  blog           Blog     @relation(fields: [blogId], references: [id])
+  views          Int      @default(0)
+  uniqueVisitors Int      @default(0)
+  clicks         Int      @default(0)
+  shares         Int      @default(0)
+  engagementRate Float    @default(0)
+  avgReadTime    Float    @default(0)
+  source         String?
+  date           DateTime @default(now())
+
+  @@map("blog_analytics")
+}
+
+// ─── Job Tracking ───
+
+model JobLog {
+  id        String    @id @default(cuid())
+  blogId    String?
+  blog      Blog?     @relation(fields: [blogId], references: [id])
+  jobType   JobType
+  status    JobStatus @default(QUEUED)
+  payload   String?
+  result    String?
+  error     String?
+  attempts  Int       @default(0)
+  startedAt DateTime?
+  endedAt   DateTime?
+  createdAt DateTime  @default(now())
+
+  @@map("job_logs")
+}
+
+enum JobType {
+  RESEARCH
+  BLOG_GENERATION
+  SEO_OPTIMIZATION
+  IMAGE_GENERATION
+  PUBLISHING
+}
+
+enum JobStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+  RETRYING
+}
