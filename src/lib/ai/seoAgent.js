@@ -2,11 +2,13 @@ import { ChatOpenAI } from "@langchain/openai";
 import { PromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 
-const model = new ChatOpenAI({
-  modelName: "gpt-4",
-  temperature: 0.3,
-  openAIApiKey: process.env.OPENAI_API_KEY,
-});
+function getModel() {
+  return new ChatOpenAI({
+    modelName: "gpt-4",
+    temperature: 0.3,
+    openAIApiKey: process.env.OPENAI_API_KEY,
+  });
+}
 
 const seoPrompt = PromptTemplate.fromTemplate(`
 You are an SEO optimization expert. Analyze and optimize the following blog content for search engines.
@@ -34,7 +36,7 @@ Provide SEO optimizations in JSON format:
 
 export async function optimizeSEO({ title, content, keywords = [], language = "en" }) {
   try {
-    const chain = seoPrompt.pipe(model).pipe(new StringOutputParser());
+    const chain = seoPrompt.pipe(getModel()).pipe(new StringOutputParser());
     const result = await chain.invoke({
       title,
       content: content.substring(0, 8000),

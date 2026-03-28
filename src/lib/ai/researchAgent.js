@@ -2,11 +2,13 @@ import { ChatOpenAI } from "@langchain/openai";
 import { PromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 
-const model = new ChatOpenAI({
-  modelName: "gpt-4",
-  temperature: 0.7,
-  openAIApiKey: process.env.OPENAI_API_KEY,
-});
+function getModel() {
+  return new ChatOpenAI({
+    modelName: "gpt-4",
+    temperature: 0.7,
+    openAIApiKey: process.env.OPENAI_API_KEY,
+  });
+}
 
 const researchPrompt = PromptTemplate.fromTemplate(`
 You are a research agent specializing in finding trending and relevant blog topics.
@@ -36,7 +38,7 @@ Format your response as JSON:
 
 export async function researchTopic({ niche, language = "en", context = "" }) {
   try {
-    const chain = researchPrompt.pipe(model).pipe(new StringOutputParser());
+    const chain = researchPrompt.pipe(getModel()).pipe(new StringOutputParser());
     const result = await chain.invoke({ niche, language, context });
     return JSON.parse(result);
   } catch (error) {

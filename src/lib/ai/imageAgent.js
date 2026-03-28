@@ -1,8 +1,8 @@
 import OpenAI from "openai";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+function getClient() {
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+}
 
 export async function generateBlogImage({ title, content, style = "digital art" }) {
   try {
@@ -11,7 +11,7 @@ export async function generateBlogImage({ title, content, style = "digital art" 
     The image should be visually appealing, modern, and relevant to the blog content. 
     No text in the image.`;
 
-    const response = await openai.images.generate({
+    const response = await getClient().images.generate({
       model: "dall-e-3",
       prompt: prompt.substring(0, 4000),
       n: 1,

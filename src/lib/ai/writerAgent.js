@@ -2,11 +2,13 @@ import { ChatOpenAI } from "@langchain/openai";
 import { PromptTemplate } from "@langchain/core/prompts";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 
-const model = new ChatOpenAI({
-  modelName: "gpt-4",
-  temperature: 0.8,
-  openAIApiKey: process.env.OPENAI_API_KEY,
-});
+function getModel() {
+  return new ChatOpenAI({
+    modelName: "gpt-4",
+    temperature: 0.8,
+    openAIApiKey: process.env.OPENAI_API_KEY,
+  });
+}
 
 const writerPrompt = PromptTemplate.fromTemplate(`
 You are an expert blog writer. Write a high-quality, engaging, and original blog post.
@@ -48,7 +50,7 @@ export async function generateBlogContent({
   wordCount = 1500,
 }) {
   try {
-    const chain = writerPrompt.pipe(model).pipe(new StringOutputParser());
+    const chain = writerPrompt.pipe(getModel()).pipe(new StringOutputParser());
     const content = await chain.invoke({
       topic,
       title,
