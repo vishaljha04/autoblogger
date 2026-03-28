@@ -36,3 +36,4 @@ prisma/*.db
 # ide
 .idea/
 .vscode/
+node_modules
